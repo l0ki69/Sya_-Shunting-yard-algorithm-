@@ -8,15 +8,11 @@ using namespace std;
 #define is_operator(c) (c == '+' || c == '-' || c == '/' || c == '*' || c == '^')
 #define is_ident(c) ((c >= '0') && (c <= '9'))
 
-Stack a;
-Stack *stack = &a;
-Queue queue;
-
 class Calculator 
 {
 public:
 	void RPN(); //Reverse Polish notation
-	void AST(); // Abstract syntax tree
+	void AST(Queue queue, Stack* stack); // Abstract syntax tree
 	void result(); 
 };
 
@@ -40,8 +36,10 @@ int pow(int value, int n)
 	return res;
 }
 
-int priority(char c)
+int priority(char c, string str)
 {
+	if (c == ' ') c = str[0];
+
 	switch (c)
 	{
 	case '*': return 2;
@@ -55,46 +53,205 @@ int priority(char c)
 	return 0;
 }
 
-void treatment(const string str) //обработка 
+typedef struct Token 
 {
-	char c;
-	for (int i = 0; i < str.length(); i++) 
+	string token;
+	int val;
+	void push(string token, int val)
 	{
-		c = str[i];
-		if (c == ' ') continue;
-		if is_ident(c)
+		this->token = token;
+		this->val = val;
+	}
+};
+
+typedef struct Tree
+{
+	Tree* l;
+	Tree* r;
+	string val;
+	void clear() 
+	{
+		this->l = NULL;
+		this->r = NULL;
+		this->val.clear();
+	}
+};
+
+void getting_tokens(string str, vector <Token>& tokens) //получение токенов
+{	
+	Token tok;
+	tok.token = "(";
+	tok.val = 3;
+	tokens.push_back(tok);
+	//str = "-5-(-4-1)-1";
+	//str = "-1-(-3+2)+1*2-2*(2-1)";
+	string buf;
+	for (int i = 0; i < str.length(); i++)
+	{
+		if (str[i] == ' ') continue;
+		buf += str[i];
+	}
+	str = buf;
+	cout << str.c_str() << endl;
+
+	string token;
+	for (int i = 0; i < str.length(); i++)
+	{
+		if (str[i] == ')')
 		{
-			queue.push(c);
+			tok.push(")", 2);
+			tokens.push_back(tok);
+			if (str[i + 1] == '-')
+			{
+				i++;
+				tok.push("-", 0);
+				tokens.push_back(tok);
+			}
+			continue;
+		}
+
+		if (str[i] == '(')
+		{
+			tok.push("(", 2);
+			tokens.push_back(tok);
+			if (str[i + 1] == '-')
+			{
+				i++;
+				token += str[i];
+				i++;
+				while (is_ident(str[i]))
+				{
+					token += str[i];
+					i++;
+				}
+				i--;
+				tok.push(token, 1);
+				tokens.push_back(tok);
+				token.clear();
+			} 
+			continue;
+		}
+
+		if (str[i] == '-')
+		{
+			if (i == 0)
+			{
+				token.clear();
+				token += str[i];
+				i++;
+				while (is_ident(str[i]))
+				{
+					token += str[i];
+					i++;
+				}
+				i--;
+				tok.push(token, 1);
+				tokens.push_back(tok);
+				token.clear();
+				continue;
+
+			} else
+			if (is_ident(str[i - 1]) && is_ident(str[i + 1]))
+			{
+				tok.push("+", 0);
+				tokens.push_back(tok);
+				token.clear();
+				token += str[i];
+				i++;
+				while (is_ident(str[i]))
+				{
+					token += str[i];
+					i++;
+				}
+				i--;
+				tok.push(token, 1);
+				tokens.push_back(tok);
+				token.clear();
+				continue;
+			}  else 
+			if (str[i+1] == '(')
+			{
+				tok.push("-", 0);
+				tokens.push_back(tok);
+				continue;
+			}
+		} else
+		if (is_operator(str[i]))
+		{
+			token += str[i];
+			tok.token = token;
+			tok.val = 0;
 		}
 		else
 		{
-			if is_operator(c)
+			while (is_ident(str[i]))
 			{
-				if (c == '^')
+				token += str[i];
+				i++;
+			}
+			i--;
+			tok.token = token;
+			tok.val = 1;
+		}
+		if (token != "") tokens.push_back(tok);
+		token.clear();
+	}
+	tok.token = ")";
+	tok.val = 3;
+	tokens.push_back(tok);
+	for (int i = 0; i < tokens.size(); i++)
+	{
+		cout << tokens[i].token.c_str() << "                     " << tokens[i].val << endl;
+	}
+}
+
+void treatment(vector <Token> tokens,Queue& queue,Stack* stack) //обработка 
+{
+	Token c;
+	for (int i = 0; i < tokens.size(); i++) 
+	{
+		c = tokens[i];
+
+		if (c.val == 1)
+		{
+			queue.push(c.token);
+		}
+		else
+		{
+			if (c.val == 0)
+			{
+				string st;
+				if ((c.token != "^") && (pop1(stack) != '^'))
+				while (priority(' ',c.token) <= priority(pop1(stack),""))
 				{
-				//	queue.out();
 					//out(stack);
+					st.clear();
+					st += pop(stack);
+					queue.push(st);
+					st.clear();
 				}
-				while (priority(c) <= priority(pop1(stack)))
-				{
-					queue.push(pop(stack));
-				}
-				push(stack, c);
+				push(stack,c.token[0]);
 			}
 			else
 			{
-				if (c == '(') push(stack, c);
-				else if (c == ')')
+				if (c.token == "(")
 				{
+					char ch = c.token[0];
+					push(stack, ch);
+				}
+				else if (c.token == ")")
+				{
+					string st;
 					while (pop1(stack) != '(')
 					{
-						//cout << "pop1 = " << pop1(stack) << endl;
-						queue.push(pop(stack));
+						st += pop(stack);
+						queue.push(st);
+						st.clear();
 						if (size(stack) == 0)
 						{
 							cout << "Ошибка балансировки скобок";
 							system("pause>NULL");
-							exit(0);
+							return;
 						}
 					}
 					pop(stack);
@@ -102,102 +259,186 @@ void treatment(const string str) //обработка
 				else
 				{
 					cout << "Ошибка: неопознаный токен ";
-					cout << c;
+					cout << c.token.c_str();
 					system("pause>NULL");
-					exit(0);
+					return;
 				}
 			}
 		}
 	}
 }
 
-double Calculat()
+bool empty(vector <string>& tree)
 {
-	int res = 0;
-	int buf = 0;
-	char c;
-	while (!queue.oper())
+	for (int i = 0; i < tree.size(); i++)
 	{
-		cout << "--------------" << endl;
-		queue.out();
-		c = queue.front();
-		cout << "c = " << c << endl;
-		queue.pop();
-		queue.out();
-		if is_ident(c) push(stack, c);
-		else
-		{	
-			cout << "operator" << endl;
-			out(stack);
-			if (c == '+') buf = (int)(pop(stack) - 48) + (int)(pop(stack) - 48);
-			if (c == '-') buf = (int)(pop(stack) - 48) - (int)(pop(stack) - 48);
-			if (c == '*') buf = (int)(pop(stack) - 48) * (int)(pop(stack) - 48);
-			if (c == '/') buf = (int)(pop(stack) - 48) / (int)(pop(stack) - 48);
-			if (c == '^') buf = pow((int)(pop(stack) - 48),(int)(pop(stack) - 48));
-			cout << "buf = " << buf << endl;
-			if (buf <10 ) queue.push_fron((char)(buf+48));
-			else while (buf != 0)
+		if (tree[i] != "") return 0;
+	}
+	return 1;
+}
+
+void Print(Tree& ast)
+{
+	if (ast.l != NULL) Print(*ast.l);
+	if (ast.r != NULL) Print(*ast.r);
+	cout << ast.val.c_str() << "     ";
+	//cout << (ast.l)->val.c_str() << "          " << (ast.r)->val.c_str() << endl;
+}
+
+void AST(Queue queue, Stack* stack)
+{
+	vector <string> tree;
+	int size = queue.size();
+	for (int i = 0; i < size; i++)
+	{
+		tree.push_back(queue.pop());
+	}
+	vector <Tree> ast;
+	ast.reserve(tree.size());
+	int k = 0; //счетчик
+	Tree a;
+	int m = 0;
+	
+	for (int i = 0; i < tree.size(); i++)
+	{
+		if ((!is_operator(tree[i][0])) && (!is_operator(tree[i+1][0])))
+		{
+			a.l = NULL;
+			a.r = NULL;
+			a.val = tree[i];
+			ast.push_back(a);
+			i++;
+			a.val = tree[i];
+			ast.push_back(a);
+			k++;
+		}
+	}
+	for (int i = 0; i < tree.size()-2; i++)
+	{
+		if ((!is_operator(tree[i][0])) && (!is_operator(tree[i + 1][0])) && (is_operator(tree[i + 2][0])))
+		{
+			a.clear();
+			if (k > 0)
 			{
-				queue.push_fron((char)((buf % 10) + 48));
-				buf /= 10;
+				a.l = &ast[m];
+				a.r = &ast[m + 1];
+				a.val = tree[i + 2];
+				tree[i] = "";
+				tree[i + 1] = "";
+				tree[i + 2] = "";
+				ast.push_back(a);
+				i += 2;
+				m += 2;
+				k--;
 			}
 		}
-		buf = 0;
-		cout << "--------------" << endl;
 	}
-	cout << "--------------------------------------------------------" << endl;
-	while (!queue.empty())
+	k = m/2;
+	a.clear();
+	while (!empty(tree))
 	{
-		cout << "res = " << res << endl;
-		res += (int)(queue.front()-48)*pow(10, queue.size()-1);
-		queue.pop();
-	}
-	return res;
-}
-
-void check(const char c) //проверка
-{
-	if (c < 58) 
-	{
-
-	}
-	else
-	{
-		switch(c) 
+		for (int i = 0; i < tree.size(); i++)
 		{
-			case '*': 
-			case '/':
-			case '%':
-			case '+':
-			case '-':
-			case '=':
-				break;
-			//return c;
-			default:
-				break;
+			if (is_operator(tree[i][0]))
+			{
+				a.clear();
+				if (k > 0)
+				{
+					a.l = &ast[m];
+					a.r = &ast[m + 1];
+					a.val = tree[i];
+					ast.push_back(a);
+					tree[i] = "";
+					m += 2;
+					k -=2;
+				}
+				if (is_ident(tree[i - 1][0]))
+				{
+					if (i == tree.size() - 1)
+					{
+						a.l = NULL;
+						a.r = NULL;
+						a.val = tree[i - 1];
+						tree[i - 1] = "";
+						ast.push_back(a);
+						a.l = &ast[m];
+						a.r = &ast[m + 1];
+						a.val = tree[i];
+						ast.push_back(a);
+						tree[i] = "";
+					}
+				}
+			}
 		}
+	} 
+	cout << "Tree = " << endl;
+	for (int i = 0; i < tree.size(); i++)
+	{
+		cout << tree[i].c_str() << " ";
 	}
+	cout << endl;
+
+	for (int i = 0; i < ast.size(); i++)
+	{
+		cout << "left = " << ast[i].l
+			<< "     right = " << ast[i].r
+			<< "     val = " << ast[i].val.c_str()
+			<< "     addr =" << &ast[i];
+		if (i != ast.size() - 1) cout << "     addr[i+1] - addr[i] =   " << (int)(&ast[i+1]) - (int)(&ast[i]);
+		cout << endl;
+	}
+
+	cout << endl;
+
+	Print(ast[ast.size() - 1]);
+
 }
 
 
 
+double Calculat(Queue queue)
+{	
+	bool q = true;
+	int i = 0;
+	while (q)
+	{
+		if ()
+	}
+
+	return 0;
+}  
 
 
 int main() 
 {
 	setlocale(LC_ALL, "Rus");
 	string str;
-	//str = "(3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3)";
-	str = "(9+2+3)";
+	str = "(3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3)";
+	//str = "1-2+3*5";
+	//str = "2^3^2";
 
-	treatment(str);
+	Stack a;
+	Stack *stack = &a;
+	Queue queue;
+
+	vector <Token> tokens;
+
+	getting_tokens(str, tokens);
+	system("pause");
+
+	treatment(tokens,queue,stack);
+
 	cout << endl;
 	queue.out();
 	out_end(stack);
 
 	system("pause");
 
-	cout << " res = " << Calculat();
+	//AST(queue, stack);
+
+	//system("pause");
+
+	cout << " res = " << Calculat(queue);
 
 	del(stack);
 	queue.~Queue();
