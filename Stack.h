@@ -28,6 +28,6 @@ struct nStack
 
 	void push(pnStack* stack, Node value); // Вставляет элемент на верх
 	Node* pop(pnStack* stack); // Удаляет верхний элемент и возвращает его
-	Node top(pnStack* stack); // Возвращает верхний элемент
+	Node* top(pnStack* stack); // Возвращает верхний элемент
 	bool empty(pnStack* stack); // Проверяет отсутствие элементов в контейнере
 };

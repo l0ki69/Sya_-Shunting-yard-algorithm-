@@ -5,7 +5,8 @@
 Node::Node()
 {
 	this->left = NULL;
-	this->rigth = NULL;
+	this->right = NULL;
+	this->parent = NULL;
 }
 
 Node::~Node()
@@ -13,22 +14,10 @@ Node::~Node()
 	
 }
 
-Node& Node::operator= (Node& rhs) {
-	if (&rhs == this) return *this;
-	value = rhs.value;
-	left = rhs.left;
-	rigth = rhs.rigth;
-	return *this;
-}
 
-/*Node* Node::ptr(pnStack stack, string val)
+bool Node::isNumber()
 {
-	Node* newNode = new Node;
-	newNode->value = val;
-	newNode->left = new Node();
-	newNode->left = &((*stack).pop(&stack));
-	newNode->rigth = new Node();
-	newNode->rigth = &((*stack).pop(&stack));
-	return newNode;
+	string buf = this->value;
+	if (is_ident(buf[0]) || is_ident(buf[1])) return 1;
+	else return 0;
 }
-*/

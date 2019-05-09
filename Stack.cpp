@@ -51,9 +51,11 @@ Node* nStack::pop(pnStack* stack)
 	return buf;
 }
 
-Node nStack::top(pnStack* stack)
+Node* nStack::top(pnStack* stack)
 {
-	return (*stack)->data;
+	Node* buf = new Node();
+	buf = &(*stack)->data;
+	return buf;
 }
 
 bool nStack::empty(pnStack* stack)

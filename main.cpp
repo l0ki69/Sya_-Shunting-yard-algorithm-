@@ -1,12 +1,11 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include "Stack.h"
 #include "Queue.h"
 
 using namespace std;
 
-#define is_operator(c) (c == '+' || c == '-' || c == '/' || c == '*' || c == '^')
-#define is_ident(c) ((c >= '0') && (c <= '9'))
 
 class Calculator 
 {
@@ -55,20 +54,6 @@ struct Token
 	}
 };
 
-struct Tree
-{
-	Tree* l;
-	Tree* r;
-	string val;
-	Tree* par;
-	void clear() 
-	{
-		this->l = NULL;
-		this->r = NULL;
-		this->par = NULL;
-		this->val.clear();
-	}
-};
 
 void getting_tokens(string str, vector <Token>& tokens) //получение токенов
 {	
@@ -76,8 +61,6 @@ void getting_tokens(string str, vector <Token>& tokens) //получение токенов
 	tok.token = "(";
 	tok.val = 3;
 	tokens.push_back(tok);
-	//str = "-5-(-4-1)-1";
-	//str = "-1-(-3+2)+1*2-2*(2-1)";
 	string buf;
 	for (int i = 0; i < str.length(); i++)
 	{
@@ -217,7 +200,6 @@ void treatment(vector <Token> tokens,Queue& queue,Stack* stack) //обработка
 				if ((c.token != "^") && (top(&stack)[0] != '^'))
 				while (priority(' ',c.token) <= priority(top(&stack)[0],""))
 				{
-					//out(stack);
 					st.clear();
 					st += pop(&stack);
 					queue.push(st);
@@ -229,7 +211,6 @@ void treatment(vector <Token> tokens,Queue& queue,Stack* stack) //обработка
 			{
 				if (c.token == "(")
 				{
-					//char ch = c.token[0];
 					push(&stack, c.token);
 				}
 				else if (c.token == ")")
@@ -264,9 +245,93 @@ void treatment(vector <Token> tokens,Queue& queue,Stack* stack) //обработка
 
 void Print(Node* node)
 {
-	cout << node->value.c_str() << "  left =  " << node->left << "  rigth  "  << node->rigth << "  addr =  " << &(node->value) << endl;
+	cout << node->value.c_str() << "  left =  " << node->left << "  rigth  "  << node->right << "  parent =  " << node->parent << "  addr = "  << node <<   endl;
+	if (node->right != NULL) Print(node->right);
 	if (node->left != NULL ) Print(node->left);
-	if (node->rigth != NULL) Print(node->rigth);
+}
+
+
+int Calculate(Node* node)
+{
+	int res;
+
+	if (is_ident(node->value[0]) || (is_ident(node->value[1])))
+	{
+		res = atoi((node->value).c_str());
+		return atoi((node->value).c_str());
+	}
+
+	string value;
+
+	if ((node->left->isNumber()) && (node->right->isNumber()))
+	{
+		if (node->value == "+")
+		{
+		//	cout << " + " << endl;
+		//	cout << "left = " << atoi((node->left->value).c_str()) << "   right = " << atoi((node->right->value).c_str()) << endl;
+			int k = atoi((node->left->value).c_str()) + atoi((node->right->value).c_str());
+			cout << "k = " << k << endl;
+			value = to_string(k);
+			node->value = value;
+			node->left = NULL;
+			node->right = NULL;
+		} 
+		else if (node->value == "-")
+		{
+			int k = atoi((node->left->value).c_str()) - atoi((node->right->value).c_str());
+			cout << "k = " << k << endl;
+			value = to_string(k);
+			node->value = value;
+			node->left = NULL;
+			node->right = NULL;
+		} 
+		else if (node->value == "*")
+		{
+		//	cout << " * " << endl;
+		//	cout << "left = " << atoi((node->left->value).c_str()) << "   right = " << atoi((node->right->value).c_str()) << endl;
+			int k = atoi((node->left->value).c_str()) * atoi((node->right->value).c_str());
+			cout << "k = " << k << endl;
+			value = to_string(k);
+		//	cout << "value = " << value.c_str() << endl;
+			node->value = value;
+			node->left = NULL;
+			node->right = NULL;
+		} 
+		else if (node->value == "/")
+		{
+			int k = atoi((node->left->value).c_str()) / atoi((node->left->value).c_str());
+		//	cout << "k = " << k << endl;
+			value = to_string(k);
+			node->value = value;
+			node->left = NULL;
+			node->right = NULL;
+		} 
+		else if (node->value == "^")
+		{
+			int k = pow(atoi((node->left->value).c_str()), atoi((node->right->value).c_str()));
+			cout << "k = " << k << endl;
+			value = to_string(k);
+			node->value = value;
+			node->left = NULL;
+			node->right = NULL;
+		}
+		if (node->parent == NULL) {
+			Calculate(node);
+		}
+		else {
+			Calculate(node->parent);
+		}
+
+	}
+	else if (!node->left->isNumber()) {
+		//cout << "Check1" << std::endl;
+		Calculate(node->left);
+	}
+	else if (!node->right->isNumber()) {
+	    //std::cout << "Check2" << std::endl;
+		Calculate(node->right);
+	}
+	//return res;
 }
 
 
@@ -283,9 +348,6 @@ void AST(Queue queue)
 		tree.push_back(queue.pop());
 	}
 
-	Node ast;
-
-
 	for (int i = 0; i < size; i++)
 	{
 		if (is_ident(tree[i][0]) || is_ident(tree[i][1]))
@@ -301,34 +363,30 @@ void AST(Queue queue)
 			Node* newNode = new Node();
 			newNode->value = tree[i];
 
+			newNode->right = new Node();
+			newNode->right = ((*stack).pop(&stack));
+			newNode->right->parent = new Node();
+			newNode->right->parent = newNode;
+
 			newNode->left = new Node();
 			newNode->left = ((*stack).pop(&stack));
-
-			newNode->rigth = new Node();
-			newNode->rigth = ((*stack).pop(&stack));
+			newNode->left->parent = new Node();
+			newNode->left->parent = newNode;
 
 			stack->push(&stack, *newNode);
+			newNode->right->parent = stack->top(&stack);
+			newNode->left->parent = stack->top(&stack);
 		}
 	}
 	
-	Print((*stack).pop(&stack));
+	Node* newNode = new Node();
+	newNode = (*stack).pop(&stack);
+	Print(newNode);
 
+	cout << endl;
+	cout << "res = " << Calculate(newNode) << endl;
 }
 
-
-
-double Calculat(Queue queue)
-{	
-	bool q = true;
-	int i = 0;
-	while (q)
-	{
-	//	if ()
-		return 0;
-	}
-
-	return 0;
-}  
 
 
 int main() 
@@ -336,9 +394,9 @@ int main()
 	setlocale(LC_ALL, "Rus");
 	string str;
 	//str = "(3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3)";
-	//str = "1+2+3";
-	//str = "2^3^2";
-	str = "1+2*3-6";
+	//str = "(3+4*2-3*10)";
+	str = "2^3^2";
+	//str = "1+2*3-6";
 
 	pStack stack = NULL;
 	Queue queue;
@@ -346,6 +404,7 @@ int main()
 	vector <Token> tokens;
 
 	getting_tokens(str, tokens);
+
 	system("pause");
 
 	treatment(tokens,queue,stack);
@@ -356,10 +415,6 @@ int main()
 	system("pause");
 
 	AST(queue);
-
-	//system("pause");
-
-	cout << " res = " << Calculat(queue);
 
 	queue.~Queue();
 	system("pause>NULL");
