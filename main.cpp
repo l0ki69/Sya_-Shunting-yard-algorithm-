@@ -44,7 +44,7 @@ int priority(char c, string str)
 	return 0;
 }
 
-typedef struct Token 
+struct Token 
 {
 	string token;
 	int val;
@@ -55,7 +55,7 @@ typedef struct Token
 	}
 };
 
-typedef struct Tree
+struct Tree
 {
 	Tree* l;
 	Tree* r;
@@ -262,6 +262,14 @@ void treatment(vector <Token> tokens,Queue& queue,Stack* stack) //обработка
 }
 
 
+void Print(Node* node)
+{
+	cout << node->value.c_str() << "  left =  " << node->left << "  rigth  "  << node->rigth << "  addr =  " << &(node->value) << endl;
+	if (node->left != NULL ) Print(node->left);
+	if (node->rigth != NULL) Print(node->rigth);
+}
+
+
 
 void AST(Queue queue)
 {
@@ -286,25 +294,24 @@ void AST(Queue queue)
 			newNode->value = tree[i];
 
 			stack->push(&stack, *newNode);
+			continue;
 		}
 		if (is_operator(tree[i][0]))
 		{
 			Node* newNode = new Node();
 			newNode->value = tree[i];
 
-			Node a = (stack->pop(&stack));
-			newNode->left = &a;  //??
-			a = (stack->pop(&stack));
-			newNode->rigth = ?a; //??
+			newNode->left = new Node();
+			newNode->left = ((*stack).pop(&stack));
+
+			newNode->rigth = new Node();
+			newNode->rigth = ((*stack).pop(&stack));
 
 			stack->push(&stack, *newNode);
 		}
 	}
 	
-	//for (int i = 0; i < size; i++)
-	//{
-
-	//}
+	Print((*stack).pop(&stack));
 
 }
 

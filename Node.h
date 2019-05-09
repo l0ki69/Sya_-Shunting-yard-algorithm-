@@ -2,7 +2,9 @@
 
 #include <iostream>
 
+
 using namespace std;
+
 
 class Node
 {
@@ -11,6 +13,7 @@ public:
 	Node* left;
 	Node* rigth;
 
+	Node& operator = (Node& rhs);
 	Node();
 	~Node();
 };

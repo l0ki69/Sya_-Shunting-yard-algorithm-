@@ -41,11 +41,12 @@ void nStack::push(pnStack* stack, Node value)
 	*stack = newp;
 }
 
-Node nStack::pop(pnStack* stack)
+Node* nStack::pop(pnStack* stack)
 {
-	Node buf = (*stack)->data;
+	Node* buf = new Node();
+	buf = &(*stack)->data;
 	pnStack p = (*stack)->next;
-	delete *stack;
+	//delete *stack;
 	*stack = p;
 	return buf;
 }
