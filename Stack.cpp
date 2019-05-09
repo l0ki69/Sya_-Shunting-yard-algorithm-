@@ -1,64 +1,62 @@
 #include "Stack.h"
 #include <iostream>
 
+using namespace std;
 
-void push(Stack_t *stack, const char value) // вставляет элемент на вверх
+
+void push(pStack* stack, string value)
 {
-	stack->data.push_back(value);
+	pStack newp = new Stack;
+	newp->data = value;
+	newp->next = *stack;
+	*stack = newp;
 }
 
-char pop(Stack_t *stack) // возвращает и  удаляет верхний элемент
+string pop(pStack* stack)
 {
-	if (stack->data.size() == 0)
-	{
-		fputs("Error: stack is empty\n", stderr);
-		abort();
-	} 
-
-	char buf = stack->data.back();
-	stack->data.pop_back();
+	string buf = (*stack)->data;
+	pStack p = (*stack)->next;
+	delete *stack;
+	*stack = p;
 	return buf;
 }
 
-char pop1(Stack_t *stack) // возвращает верхний элемент
+string top(pStack* stack)
 {
-	return stack->data.back();
+	return (*stack)->data;
 }
 
-char peek(const Stack_t *stack) // возвращает последний элемент
+bool empty(pStack* stack)
 {
-	if (stack->data.size() == 0)
-	{
-		fputs( "Error: stack is empty\n", stderr );
-	}
-	return stack->data.back();
+	if ((*stack) == NULL) return 1;
+	else return 0;
 }
 
-int size(const Stack_t *stack) // возвращает кол-во элементов в стеке
+
+void nStack::push(pnStack* stack, Node value)
 {
-	return stack->data.size();
+	pnStack newp = new nStack;
+	newp->data = value;
+	newp->next = *stack;
+	*stack = newp;
 }
 
-void out_end(Stack_t *stack) // выводит стек и очищает его
+Node nStack::pop(pnStack* stack)
 {
-	std::cout << std::endl <<  "Stack " << std::endl;
-	while (size(stack))
-	{
-		std::cout << pop(stack);
-	}
+	Node buf = (*stack)->data;
+	pnStack p = (*stack)->next;
+	delete *stack;
+	*stack = p;
+	return buf;
 }
 
-void out(Stack_t *stack) // выводит стек
+Node nStack::top(pnStack* stack)
 {
-	std::cout << std::endl << "Stack " << std::endl;
-	for (int i = 0; i < size(stack); i++)
-	{
-		std::cout << stack->data[i] << " ";
-	}
-	std::cout << std::endl;
+	return (*stack)->data;
 }
 
-void del(Stack_t *stack) //удаление стека
+bool nStack::empty(pnStack* stack)
 {
-	stack->data.clear();
+	if ((*stack) == NULL) return 1;
+	else return 0;
 }
